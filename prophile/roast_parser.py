@@ -325,6 +325,11 @@ def parse_alog(text: str, filename: str, profile_id: str = "") -> dict[str, Any]
         if computed_loss is not None and computed_loss >= 0:
             weight_loss = computed_loss
 
+    density_data = _list(data, "density")
+    density_green = _number(density_data[0]) if len(density_data) > 0 else None
+    if density_green is not None and density_green <= 0:
+        density_green = None
+
     return {
         "id": profile_id,
         "filename": os.path.basename(filename),
@@ -342,6 +347,7 @@ def parse_alog(text: str, filename: str, profile_id: str = "") -> dict[str, Any]
             "lossPercent": None if weight_loss is None else round(weight_loss, 1),
             "unit": weight_unit,
         },
+        "density": None if density_green is None else round(density_green, 1),
         "phases": {
             "total": None if total is None else round(total, 4),
             "drying": _phase(drying, total),

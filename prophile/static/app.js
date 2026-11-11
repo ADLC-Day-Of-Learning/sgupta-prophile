@@ -97,6 +97,10 @@
     return typeof value === "number" && Number.isFinite(value) ? `${value.toFixed(1)}${unit ? ` ${unit}` : ""}` : "—";
   }
 
+  function densityText(value) {
+    return typeof value === "number" && Number.isFinite(value) ? `${value.toFixed(1)} g/L` : "—";
+  }
+
   function finalWeightText(weights) {
     const finalWeight = weightText(weights?.final, weights?.unit);
     const hasLoss = typeof weights?.lossPercent === "number" && Number.isFinite(weights.lossPercent);
@@ -158,6 +162,7 @@
       const name = document.createElement("td"); name.className = "profile-name"; name.textContent = profile.displayName; name.style.color = profile.color;
 
       const greenWeight = document.createElement("td"); greenWeight.className = "weight-value"; greenWeight.textContent = weightText(profile.weights?.green, profile.weights?.unit);
+      const density = document.createElement("td"); density.className = "weight-value"; density.textContent = densityText(profile.density);
       const finalWeight = document.createElement("td"); finalWeight.className = "weight-value"; finalWeight.textContent = finalWeightText(profile.weights);
       const chargeTemp = document.createElement("td"); chargeTemp.className = "temperature-value"; chargeTemp.textContent = eventTemperature(profile, "charge");
       const dropTemp = document.createElement("td"); dropTemp.className = "temperature-value"; dropTemp.textContent = eventTemperature(profile, "drop");
@@ -184,7 +189,7 @@
       const remove = document.createElement("button"); remove.type = "button"; remove.className = "remove-button"; remove.textContent = "×";
       remove.title = `Remove ${profile.displayName} from comparison`; remove.setAttribute("aria-label", remove.title);
       remove.addEventListener("click", () => { profile.enabled = false; renderProfiles(); updateChart(); }); actions.append(remove);
-      row.append(name, greenWeight, finalWeight, chargeTemp, dropTemp, drying, browning, development, actions);
+      row.append(name, greenWeight, density, finalWeight, chargeTemp, dropTemp, drying, browning, development, actions);
       elements.rows.append(row);
     }
   }
