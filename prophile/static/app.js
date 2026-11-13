@@ -21,6 +21,7 @@
     selectNone: document.querySelector("#select-none"),
     clearAll: document.querySelector("#clear-all"),
     notesTooltip: document.querySelector("#notes-tooltip"),
+    themeToggle: document.querySelector("#theme-toggle"),
   };
 
   const chart = new window.RoastOverlayChart(
@@ -364,6 +365,42 @@
     importFiles(event.dataTransfer.files);
   });
 
+  function setTheme(theme) {
+    const isDark = theme === "dark";
+    const mode = isDark ? "dark" : "light";
+    document.documentElement.setAttribute("data-theme", mode);
+    if (document.body) document.body.setAttribute("data-theme", mode);
+    try {
+      localStorage.setItem("theme", mode);
+    } catch (_) {}
+    if (elements.themeToggle) {
+      elements.themeToggle.setAttribute("aria-label", isDark ? "Switch to light mode" : "Switch to dark mode");
+      elements.themeToggle.setAttribute("title", isDark ? "Switch to light mode" : "Switch to dark mode");
+      elements.themeToggle.setAttribute("aria-pressed", isDark ? "true" : "false");
+      const label = elements.themeToggle.querySelector(".theme-label");
+      if (label) label.textContent = isDark ? "Light mode" : "Dark mode";
+    }
+    chart.render();
+  }
+
+  function toggleTheme() {
+    const current = document.documentElement.getAttribute("data-theme");
+    const next = current === "dark" ? "light" : "dark";
+    setTheme(next);
+  }
+
+  function initTheme() {
+    let saved = null;
+    try {
+      saved = localStorage.getItem("theme");
+    } catch (_) {}
+    setTheme(saved === "dark" ? "dark" : "light");
+    if (elements.themeToggle) {
+      elements.themeToggle.addEventListener("click", toggleTheme);
+    }
+  }
+
+  initTheme();
   renderProfiles(); updateChart();
   loadLocalProfiles();
 })();
