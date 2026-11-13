@@ -21,6 +21,8 @@ agents:
         security-triage: google-vertex/gemini-3.8-flash
         style-conventions: google-vertex/gemini-3.8-flash
         user-experience: google-vertex/gemini-3.8-flash
+    - name: triage
+      model: google-vertex/gemini-3.8-flash
 create_issues:
     allow_targets:
         repos:
