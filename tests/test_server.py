@@ -38,6 +38,8 @@ class ServerTests(unittest.TestCase):
                     self.assertIn('data-theme="dark"', css)
                     self.assertIn("--ink", css)
                     self.assertIn("--paper", css)
+                    self.assertIn(".theme-toggle .theme-icon-sun { display: none; }", css)
+                    self.assertIn(".theme-toggle .theme-icon-moon { display: block; }", css)
                 with urlopen(base + "/app.js") as response:
                     js = response.read().decode("utf-8")
                     self.assertIn("themeToggle", js)
@@ -49,3 +51,17 @@ class ServerTests(unittest.TestCase):
                 server.shutdown()
                 server.server_close()
                 thread.join()
+
+    def test_theme_toggle_icon_styles_specificity(self):
+        css_path = Path(__file__).resolve().parents[1] / "prophile" / "static" / "styles.css"
+        css = css_path.read_text(encoding="utf-8")
+        self.assertIn(".theme-toggle .theme-icon-sun { display: none; }", css)
+        self.assertIn(".theme-toggle .theme-icon-moon { display: block; }", css)
+        self.assertIn(
+            ':root[data-theme="dark"] .theme-toggle .theme-icon-sun, [data-theme="dark"] .theme-toggle .theme-icon-sun { display: block; }',
+            css,
+        )
+        self.assertIn(
+            ':root[data-theme="dark"] .theme-toggle .theme-icon-moon, [data-theme="dark"] .theme-toggle .theme-icon-moon { display: none; }',
+            css,
+        )

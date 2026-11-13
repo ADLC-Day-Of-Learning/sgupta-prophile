@@ -137,10 +137,10 @@ h2 { font-family: Georgia, "Times New Roman", serif; font-size: 26px; font-weigh
   display: block;
   flex: 0 0 auto;
 }
-.theme-icon-sun { display: none; }
-.theme-icon-moon { display: block; }
-:root[data-theme="dark"] .theme-icon-sun, [data-theme="dark"] .theme-icon-sun { display: block; }
-:root[data-theme="dark"] .theme-icon-moon, [data-theme="dark"] .theme-icon-moon { display: none; }
+.theme-toggle .theme-icon-sun { display: none; }
+.theme-toggle .theme-icon-moon { display: block; }
+:root[data-theme="dark"] .theme-toggle .theme-icon-sun, [data-theme="dark"] .theme-toggle .theme-icon-sun { display: block; }
+:root[data-theme="dark"] .theme-toggle .theme-icon-moon, [data-theme="dark"] .theme-toggle .theme-icon-moon { display: none; }
 
 .status { color: var(--muted); min-height: 0; }
 .status:not(:empty) { margin: -6px 0 16px; }
