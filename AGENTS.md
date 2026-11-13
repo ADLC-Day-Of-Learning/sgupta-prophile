@@ -8,7 +8,8 @@
 ## Documentation Currency
 
 - `design_doc.md` is living documentation.
-- Any change modifying profile table columns, data formats, or backend endpoints must update Section 3.2 ('Sidebar and selected-profile grid') column tables and example rows.
+- Any change modifying profile table columns must update Section 3.2 ('Sidebar and selected-profile grid') column tables and example rows.
+- Any change modifying data formats or backend endpoints must update Section 5.2 ('Normalized API result') and/or Section 6.3 ('Local API').
 
 ## HTML Integration Test Conventions
 
