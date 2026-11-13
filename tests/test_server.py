@@ -33,6 +33,9 @@ class ServerTests(unittest.TestCase):
                     self.assertIn(b"Beans &amp; batches", body)
                     self.assertIn(b'id="theme-toggle"', body)
                     self.assertIn(b'class="theme-toggle"', body)
+                    self.assertIn(b"Green Weight (Density)", body)
+                    self.assertNotIn(b"<th>Green weight</th>", body)
+                    self.assertNotIn(b"<th>Density</th>", body)
                 with urlopen(base + "/styles.css") as response:
                     css = response.read().decode("utf-8")
                     self.assertIn('data-theme="dark"', css)
@@ -42,9 +45,30 @@ class ServerTests(unittest.TestCase):
                     js = response.read().decode("utf-8")
                     self.assertIn("themeToggle", js)
                     self.assertIn("setTheme", js)
+                    self.assertIn("greenWeightDensityText", js)
                 with urlopen(base + "/chart.js") as response:
                     chart_js = response.read().decode("utf-8")
                     self.assertIn("isDarkMode", chart_js)
+            finally:
+                server.shutdown()
+                server.server_close()
+                thread.join()
+
+    def test_profiles_table_combined_header(self):
+        sample = next((Path(__file__).resolve().parents[1] / "sample_profiles").glob("*.alog"))
+        with tempfile.TemporaryDirectory() as tmp:
+            directory = Path(tmp)
+            (directory / sample.name).write_bytes(sample.read_bytes())
+            server = AppServer(("127.0.0.1", 0), directory.resolve())
+            thread = threading.Thread(target=server.serve_forever, daemon=True)
+            thread.start()
+            try:
+                base = f"http://127.0.0.1:{server.server_port}"
+                with urlopen(base + "/") as response:
+                    html = response.read().decode("utf-8")
+                    self.assertIn("Green Weight (Density)", html)
+                    self.assertNotIn("<th>Green weight</th>", html)
+                    self.assertNotIn("<th>Density</th>", html)
             finally:
                 server.shutdown()
                 server.server_close()
