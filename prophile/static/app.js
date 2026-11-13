@@ -380,7 +380,7 @@
       const label = elements.themeToggle.querySelector(".theme-label");
       if (label) label.textContent = isDark ? "Light mode" : "Dark mode";
     }
-    chart.render();
+    chart.setTheme(mode);
   }
 
   function toggleTheme() {
