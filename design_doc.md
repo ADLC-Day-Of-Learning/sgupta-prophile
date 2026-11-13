@@ -84,7 +84,7 @@ The sidebar offers batch and whole-bean checkboxes (including a partial-selectio
 | Column | Content |
 |---|---|
 | Profile | Source filename without `.alog`, underscores replaced with spaces; the name uses the profile's chart color |
-| Green weight | Green-bean batch weight and source unit, displayed to one decimal place |
+| Green Weight (Density) | Green-bean batch weight and density formatted as `<weight> (<density>)` |
 | Final weight | Final roasted batch weight followed by weight-loss percentage as `<final weight> (-<weight loss>%)` |
 | Charge temp | Bean temperature at Charge, displayed to one decimal place in °C |
 | Drop temp | Bean temperature at Drop, displayed to one decimal place in °C |
@@ -96,8 +96,8 @@ The sidebar offers batch and whole-bean checkboxes (including a partial-selectio
 Example display name: `26-08-14_Baarbara_Washed_AAA_batch_5.alog` becomes `26-08-14 Baarbara Washed AAA batch 5`.
 
 ```text
-Green weight  Final weight       Charge temp  Drop temp  Drying       Browning      Development
-125.0 g       105.0 g (-16.0%)  207.6 °C     187.7 °C   03:49 · 41%  03:40 · 39%   01:50 · 20%
+Green Weight (Density)  Final weight       Charge temp  Drop temp  Drying       Browning      Development
+125.0 g (750.0 g/L)     105.0 g (-16.0%)  207.6 °C     187.7 °C   03:49 · 41%  03:40 · 39%   01:50 · 20%
 ```
 
 Weight loss is derived from the Artisan `weight` field and appended in the Final weight cell. Missing values display `—`. Drying, Browning, and Development use mid-tone green, mid-tone brown, and dark brown in the grid. Duplicate imports (filename plus size) are skipped; per-file errors do not block other imports. Hovering or keyboard-focusing a row with roast or cupping notes reveals a labeled notes tooltip. Hovering a grid row emphasizes its chart curves; hovering near a curve or event pin highlights its grid row.

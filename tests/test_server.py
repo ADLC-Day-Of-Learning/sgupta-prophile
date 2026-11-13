@@ -34,8 +34,8 @@ class ServerTests(unittest.TestCase):
                     self.assertIn(b'id="theme-toggle"', body)
                     self.assertIn(b'class="theme-toggle"', body)
                     self.assertIn(b"Green Weight (Density)", body)
-                    self.assertNotIn(b"<th>Green weight</th>", body)
-                    self.assertNotIn(b"<th>Density</th>", body)
+                    self.assertNotIn(b'<th scope="col">Green weight</th>', body)
+                    self.assertNotIn(b'<th scope="col">Density</th>', body)
                 with urlopen(base + "/styles.css") as response:
                     css = response.read().decode("utf-8")
                     self.assertIn('data-theme="dark"', css)
@@ -69,8 +69,8 @@ class ServerTests(unittest.TestCase):
                 with urlopen(base + "/") as response:
                     html = response.read().decode("utf-8")
                     self.assertIn("Green Weight (Density)", html)
-                    self.assertNotIn("<th>Green weight</th>", html)
-                    self.assertNotIn("<th>Density</th>", html)
+                    self.assertNotIn('<th scope="col">Green weight</th>', html)
+                    self.assertNotIn('<th scope="col">Density</th>', html)
             finally:
                 server.shutdown()
                 server.server_close()
