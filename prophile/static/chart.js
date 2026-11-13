@@ -50,6 +50,7 @@
       this.visibility = { bt: true, et: true, ror: true, heat: true, air: true, events: true };
       this.hover = null;
       this.highlightId = null;
+      this.theme = null;
       this.onHoverProfile = () => {};
       this.bounds = null;
       this.resizeObserver = new ResizeObserver(() => this.render());
@@ -70,6 +71,20 @@
     }
 
     enabledProfiles() { return this.profiles.filter(profile => profile.enabled); }
+
+    isDarkMode() {
+      if (this.theme === "dark") return true;
+      if (this.theme === "light") return false;
+      return (
+        document.documentElement.getAttribute("data-theme") === "dark" ||
+        document.body?.getAttribute("data-theme") === "dark"
+      );
+    }
+
+    setTheme(theme) {
+      this.theme = theme;
+      this.render();
+    }
 
     setHighlight(id) {
       if (this.highlightId === id) return;
@@ -170,23 +185,24 @@
     }
 
     drawAxes(ctx, plot, ranges, x, yFor, compact) {
+      const isDark = this.isDarkMode();
       ctx.font = `${compact ? 10 : 11}px ui-sans-serif, system-ui, sans-serif`;
       ctx.textBaseline = "middle";
       ctx.lineWidth = 1;
       for (let i = 0; i <= 5; i++) {
         const ratio = i / 5;
         const py = plot.y + plot.h * ratio;
-        ctx.strokeStyle = i === 5 ? "#cfc9bf" : "#e9e5dd";
+        ctx.strokeStyle = i === 5 ? (isDark ? "#384558" : "#cfc9bf") : (isDark ? "#242e3f" : "#e9e5dd");
         ctx.beginPath(); ctx.moveTo(plot.x, py); ctx.lineTo(plot.x + plot.w, py); ctx.stroke();
         const value = ranges.temp[1] - (ranges.temp[1] - ranges.temp[0]) * ratio;
-        ctx.fillStyle = "#6d7482"; ctx.textAlign = "right"; ctx.fillText(`${Math.round(value)}°`, plot.x - 9, py);
+        ctx.fillStyle = isDark ? "#94a3b8" : "#6d7482"; ctx.textAlign = "right"; ctx.fillText(`${Math.round(value)}°`, plot.x - 9, py);
       }
       for (let i = 0; i <= 6; i++) {
         const value = ranges.time[1] * i / 6;
         const px = x(value);
-        ctx.strokeStyle = "#eeeae3";
+        ctx.strokeStyle = isDark ? "#242e3f" : "#eeeae3";
         ctx.beginPath(); ctx.moveTo(px, plot.y); ctx.lineTo(px, plot.y + plot.h); ctx.stroke();
-        ctx.fillStyle = "#6d7482"; ctx.textAlign = "center"; ctx.fillText(timeLabel(value), px, plot.y + plot.h + 19);
+        ctx.fillStyle = isDark ? "#94a3b8" : "#6d7482"; ctx.textAlign = "center"; ctx.fillText(timeLabel(value), px, plot.y + plot.h + 19);
       }
       for (let i = 0; i <= 5; i++) {
         const ratio = i / 5;
@@ -194,16 +210,16 @@
         const ror = ranges.ror[1] - (ranges.ror[1] - ranges.ror[0]) * ratio;
         const control = 100 - 100 * ratio;
         ctx.textAlign = "left";
-        ctx.fillStyle = "#355c9e"; ctx.fillText(ror.toFixed(Math.abs(ror) < 10 ? 1 : 0), plot.x + plot.w + 9, py);
+        ctx.fillStyle = isDark ? "#60a5fa" : "#355c9e"; ctx.fillText(ror.toFixed(Math.abs(ror) < 10 ? 1 : 0), plot.x + plot.w + 9, py);
         ctx.textAlign = "right";
-        ctx.fillStyle = "#8b6b3f"; ctx.fillText(`${Math.round(control)}`, plot.x - (compact ? 42 : 55), py);
+        ctx.fillStyle = isDark ? "#f59e0b" : "#8b6b3f"; ctx.fillText(`${Math.round(control)}`, plot.x - (compact ? 42 : 55), py);
       }
       ctx.font = `700 ${compact ? 9 : 10}px ui-sans-serif, system-ui, sans-serif`;
-      ctx.fillStyle = "#687083";
+      ctx.fillStyle = isDark ? "#94a3b8" : "#687083";
       ctx.textAlign = "left"; ctx.fillText("TEMP °C", plot.x, 13);
-      ctx.fillStyle = "#355c9e"; ctx.textAlign = "right"; ctx.fillText("ROR", plot.x + plot.w + 34, 13);
-      ctx.fillStyle = "#8b6b3f"; ctx.textAlign = "left"; ctx.fillText("AIR / HEAT %", compact ? 2 : 8, compact ? 24 : 13);
-      ctx.fillStyle = "#687083"; ctx.textAlign = "center"; ctx.fillText("TIME FROM CHARGE", plot.x + plot.w / 2, plot.y + plot.h + 42);
+      ctx.fillStyle = isDark ? "#60a5fa" : "#355c9e"; ctx.textAlign = "right"; ctx.fillText("ROR", plot.x + plot.w + 34, 13);
+      ctx.fillStyle = isDark ? "#f59e0b" : "#8b6b3f"; ctx.textAlign = "left"; ctx.fillText("AIR / HEAT %", compact ? 2 : 8, compact ? 24 : 13);
+      ctx.fillStyle = isDark ? "#94a3b8" : "#687083"; ctx.textAlign = "center"; ctx.fillText("TIME FROM CHARGE", plot.x + plot.w / 2, plot.y + plot.h + 42);
     }
 
     drawSeries(ctx, points, definition, color, x, y) {
@@ -254,10 +270,11 @@
 
     drawHover(ctx) {
       if (!this.bounds || !this.hover) return;
+      const isDark = this.isDarkMode();
       const { plot, x } = this.bounds;
       const px = x(this.hover.time);
       ctx.save();
-      ctx.strokeStyle = "rgba(29, 39, 59, .42)"; ctx.lineWidth = 1; ctx.setLineDash([3, 3]);
+      ctx.strokeStyle = isDark ? "rgba(226, 232, 240, .45)" : "rgba(29, 39, 59, .42)"; ctx.lineWidth = 1; ctx.setLineDash([3, 3]);
       ctx.beginPath(); ctx.moveTo(px, plot.y); ctx.lineTo(px, plot.y + plot.h); ctx.stroke();
       ctx.restore();
     }

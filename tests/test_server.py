@@ -29,7 +29,22 @@ class ServerTests(unittest.TestCase):
                 self.assertEqual(data["profiles"][0]["bean"], "Baarbara Washed AA")
                 self.assertEqual(len(data["errors"]), 1)
                 with urlopen(base + "/") as response:
-                    self.assertIn(b"Beans &amp; batches", response.read())
+                    body = response.read()
+                    self.assertIn(b"Beans &amp; batches", body)
+                    self.assertIn(b'id="theme-toggle"', body)
+                    self.assertIn(b'class="theme-toggle"', body)
+                with urlopen(base + "/styles.css") as response:
+                    css = response.read().decode("utf-8")
+                    self.assertIn('data-theme="dark"', css)
+                    self.assertIn("--ink", css)
+                    self.assertIn("--paper", css)
+                with urlopen(base + "/app.js") as response:
+                    js = response.read().decode("utf-8")
+                    self.assertIn("themeToggle", js)
+                    self.assertIn("setTheme", js)
+                with urlopen(base + "/chart.js") as response:
+                    chart_js = response.read().decode("utf-8")
+                    self.assertIn("isDarkMode", chart_js)
             finally:
                 server.shutdown()
                 server.server_close()
