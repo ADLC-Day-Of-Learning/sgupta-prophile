@@ -79,7 +79,7 @@ Groups are derived **only from filenames**: a leading date and trailing `_batch_
 
 ### 3.2 Sidebar and selected-profile grid
 
-The sidebar offers batch and whole-bean checkboxes (including a partial-selection state), **Select all**, **Select none**, a per-batch × to remove a loaded profile entirely, and **Clear all**. Unselected batches remain available in the sidebar. Only selected profiles appear in the grid and chart. On narrow screens, the grid remains horizontally scrollable rather than hiding temperature or phase data; its smaller type and tighter spacing help it fit beside the sidebar.
+The sidebar offers batch and whole-bean checkboxes (including a partial-selection state), **Select all**, **Select none**, a per-batch × to remove a loaded profile entirely, **Clear all**, and a date range selector (From and To date inputs) located below the action buttons and above the batch checkboxes. The date range defaults to the span from the oldest loaded roast date through today's date, with both inputs initially set to today's date. Adjusting the date range selects all roasts falling within the selected dates. Clicking **Select all** updates the date range to encompass all loaded roasts, clicking **Select none** deselects all profiles and resets the date inputs to today's date, and selecting or deselecting individual batches synchronizes the date range to the span of the active selection. Unselected batches remain available in the sidebar. Only selected profiles appear in the grid and chart. On narrow screens, the grid remains horizontally scrollable rather than hiding temperature or phase data; its smaller type and tighter spacing help it fit beside the sidebar.
 
 | Column | Content |
 |---|---|

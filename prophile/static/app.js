@@ -6,7 +6,7 @@
   const duplicateKeys = new Set();
   let colorSequence = 0;
 
-  const elements = {
+  const elements = typeof document !== "undefined" ? {
     input: document.querySelector("#file-input"),
     status: document.querySelector("#status"),
     messages: document.querySelector("#messages"),
@@ -20,17 +20,22 @@
     selectAll: document.querySelector("#select-all"),
     selectNone: document.querySelector("#select-none"),
     clearAll: document.querySelector("#clear-all"),
+    dateRangeFilter: document.querySelector("#date-range-filter"),
+    dateStart: document.querySelector("#date-start"),
+    dateEnd: document.querySelector("#date-end"),
     notesTooltip: document.querySelector("#notes-tooltip"),
     themeToggle: document.querySelector("#theme-toggle"),
-  };
+  } : {};
 
-  const chart = new window.RoastOverlayChart(
+  const chart = typeof document !== "undefined" && typeof window !== "undefined" && window.RoastOverlayChart ? new window.RoastOverlayChart(
     document.querySelector("#chart"),
     document.querySelector("#tooltip"),
     document.querySelector("#chart-empty"),
     document.querySelector("#chart-summary"),
-  );
-  chart.onHoverProfile = id => highlightRow(id);
+  ) : null;
+  if (chart) {
+    chart.onHoverProfile = id => highlightRow(id);
+  }
 
   function highlightRow(id) {
     for (const row of elements.rows.querySelectorAll("tr[data-profile-id]")) {
@@ -63,12 +68,107 @@
   }
 
   function updateChart() {
-    chart.setData(profiles, visibility());
+    if (chart) chart.setData(profiles, visibility());
     renderFilters();
     renderLegend();
   }
 
-  function setStatus(message) { elements.status.textContent = message; }
+  function getTodayIso() {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, "0");
+    const day = String(now.getDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
+  }
+
+  function profileDate(profile) {
+    if (!profile) return null;
+    if (profile.roastisodate && /^\d{4}-\d{2}-\d{2}$/.test(profile.roastisodate)) {
+      return profile.roastisodate;
+    }
+    if (profile.roastDate && /^\d{4}-\d{2}-\d{2}$/.test(profile.roastDate)) {
+      return profile.roastDate;
+    }
+    if (profile.date && /^\d{4}-\d{2}-\d{2}$/.test(profile.date)) {
+      return profile.date;
+    }
+    const match = (profile.filename || "").match(/(?:^|[^0-9])(\d{2,4})-(\d{2})-(\d{2})(?:[^0-9]|$)/);
+    if (match) {
+      let year = Number.parseInt(match[1], 10);
+      if (year < 100) year += 2000;
+      const month = match[2];
+      const day = match[3];
+      return `${year}-${month}-${day}`;
+    }
+    return null;
+  }
+
+  function updateDateBounds() {
+    if (!elements.dateStart || !elements.dateEnd) return;
+    const today = getTodayIso();
+    const allDates = profiles.map(p => profileDate(p)).filter(Boolean).sort();
+    if (allDates.length) {
+      const oldest = allDates[0];
+      const newest = allDates[allDates.length - 1];
+      const maxDate = newest > today ? newest : today;
+      elements.dateStart.min = oldest;
+      elements.dateStart.max = maxDate;
+      elements.dateEnd.min = oldest;
+      elements.dateEnd.max = maxDate;
+    } else {
+      if (elements.dateStart.removeAttribute) elements.dateStart.removeAttribute("min");
+      else delete elements.dateStart.min;
+      if (elements.dateEnd.removeAttribute) elements.dateEnd.removeAttribute("min");
+      else delete elements.dateEnd.min;
+      elements.dateStart.max = today;
+      elements.dateEnd.max = today;
+    }
+  }
+
+  function updateDateRangeFromSelection() {
+    if (!elements.dateStart || !elements.dateEnd) return;
+    const selected = profiles.filter(p => p.enabled);
+    if (!selected.length) {
+      const today = getTodayIso();
+      elements.dateStart.value = today;
+      elements.dateEnd.value = today;
+      return;
+    }
+    const dates = selected
+      .map(p => profileDate(p))
+      .filter(Boolean)
+      .sort();
+    if (dates.length) {
+      elements.dateStart.value = dates[0];
+      elements.dateEnd.value = dates[dates.length - 1];
+    }
+  }
+
+  function applyDateRangeFilter() {
+    if (!elements.dateStart || !elements.dateEnd) return;
+    const start = elements.dateStart.value;
+    const end = elements.dateEnd.value;
+    if (start && !/^\d{4}-\d{2}-\d{2}$/.test(start)) return;
+    if (end && !/^\d{4}-\d{2}-\d{2}$/.test(end)) return;
+    if (!start && !end) return;
+
+    for (const profile of profiles) {
+      const d = profileDate(profile);
+      if (!d) continue;
+      let inRange = true;
+      if (start && end && start > end) {
+        inRange = false;
+      } else {
+        if (start && d < start) inRange = false;
+        if (end && d > end) inRange = false;
+      }
+      profile.enabled = inRange;
+    }
+    renderProfiles();
+    updateChart();
+  }
+
+  function setStatus(message) { if (elements.status) elements.status.textContent = message; }
 
   function addMessage(message, type = "warning") {
     const item = document.createElement("div");
@@ -152,11 +252,12 @@
   }
 
   function hideNotesTooltip() {
-    elements.notesTooltip.hidden = true;
+    if (elements.notesTooltip) elements.notesTooltip.hidden = true;
   }
 
   function renderProfiles() {
     hideNotesTooltip();
+    if (!elements.gridEmpty || !elements.tableScroll || !elements.rows) return;
     const selected = profiles.filter(profile => profile.enabled);
     elements.gridEmpty.hidden = selected.length > 0;
     elements.tableScroll.hidden = selected.length === 0;
@@ -195,7 +296,7 @@
       const actions = document.createElement("td");
       const remove = document.createElement("button"); remove.type = "button"; remove.className = "remove-button"; remove.textContent = "×";
       remove.title = `Remove ${profile.displayName} from comparison`; remove.setAttribute("aria-label", remove.title);
-      remove.addEventListener("click", () => { profile.enabled = false; renderProfiles(); updateChart(); }); actions.append(remove);
+      remove.addEventListener("click", () => { profile.enabled = false; updateDateRangeFromSelection(); renderProfiles(); updateChart(); }); actions.append(remove);
       row.append(name, greenWeight, finalWeight, chargeTemp, dropTemp, drying, browning, development, actions);
       elements.rows.append(row);
     }
@@ -207,6 +308,7 @@
   }
 
   function renderFilters() {
+    if (!elements.groups || !elements.filterEmpty) return;
     elements.groups.replaceChildren();
     elements.filterEmpty.hidden = profiles.length > 0;
     const groups = new Map();
@@ -225,6 +327,7 @@
       groupCheck.setAttribute("aria-label", `Select all batches of ${bean}`);
       groupCheck.addEventListener("change", () => {
         items.forEach(profile => { profile.enabled = groupCheck.checked; });
+        updateDateRangeFromSelection();
         renderProfiles(); updateChart();
       });
       const title = document.createElement("strong"); title.textContent = bean;
@@ -236,7 +339,9 @@
         const check = document.createElement("input"); check.type = "checkbox"; check.checked = profile.enabled;
         check.setAttribute("aria-label", `Show ${profile.displayName}`);
         check.addEventListener("change", () => {
-          profile.enabled = check.checked; renderProfiles(); updateChart();
+          profile.enabled = check.checked;
+          updateDateRangeFromSelection();
+          renderProfiles(); updateChart();
         });
         const name = document.createElement("span"); name.textContent = batchLabel(profile);
         name.title = profile.displayName;
@@ -253,6 +358,7 @@
   }
 
   function renderLegend() {
+    if (!elements.legend) return;
     elements.legend.replaceChildren();
     for (const profile of profiles.filter(profile => profile.enabled)) {
       const key = document.createElement("span"); key.className = "profile-key";
@@ -267,12 +373,17 @@
     if (index < 0) return;
     duplicateKeys.delete(profiles[index].duplicateKey);
     profiles.splice(index, 1);
+    updateDateBounds();
+    updateDateRangeFromSelection();
     renderProfiles(); updateChart();
     setStatus(profiles.length ? `${profiles.length} profile${profiles.length === 1 ? "" : "s"} loaded.` : "");
   }
 
   function clearAll() {
-    profiles.splice(0); duplicateKeys.clear(); elements.messages.replaceChildren();
+    profiles.splice(0); duplicateKeys.clear();
+    if (elements.messages) elements.messages.replaceChildren();
+    updateDateBounds();
+    updateDateRangeFromSelection();
     renderProfiles(); updateChart(); setStatus("");
   }
 
@@ -318,6 +429,8 @@
         addMessage(`${file.name}: ${networkMessage}`, "error");
       }
     }
+    updateDateBounds();
+    updateDateRangeFromSelection();
     renderProfiles(); updateChart();
     setStatus(`${loaded} profile${loaded === 1 ? "" : "s"} loaded${accepted.length !== loaded ? `; ${accepted.length - loaded} failed` : ""}.`);
     elements.input.value = "";
@@ -338,6 +451,8 @@
         for (const warning of profile.warnings || []) addMessage(`${profile.filename}: ${warning}`);
       }
       for (const error of result.errors) addMessage(error, "error");
+      updateDateBounds();
+      updateDateRangeFromSelection();
       renderProfiles(); updateChart();
       setStatus(`${profiles.length} profile${profiles.length === 1 ? "" : "s"} found in ${result.directory}. Select batches to compare.`);
     } catch (error) {
@@ -345,8 +460,8 @@
     }
   }
 
-  elements.input.addEventListener("change", () => importFiles(elements.input.files));
-  elements.controls.addEventListener("change", event => {
+  if (elements.input) elements.input.addEventListener("change", () => importFiles(elements.input.files));
+  if (elements.controls) elements.controls.addEventListener("change", event => {
     const input = event.target;
     if (!(input instanceof HTMLInputElement)) return;
     const measurements = [...elements.controls.querySelectorAll("input[data-series]:not([data-series='events'])")];
@@ -357,19 +472,30 @@
     }
     updateChart();
   });
-  elements.selectAll.addEventListener("click", () => { profiles.forEach(profile => { profile.enabled = true; }); renderProfiles(); updateChart(); });
-  elements.selectNone.addEventListener("click", () => { profiles.forEach(profile => { profile.enabled = false; }); renderProfiles(); updateChart(); });
-  elements.clearAll.addEventListener("click", clearAll);
+  if (elements.selectAll) elements.selectAll.addEventListener("click", () => { profiles.forEach(profile => { profile.enabled = true; }); updateDateRangeFromSelection(); renderProfiles(); updateChart(); });
+  if (elements.selectNone) elements.selectNone.addEventListener("click", () => { profiles.forEach(profile => { profile.enabled = false; }); updateDateRangeFromSelection(); renderProfiles(); updateChart(); });
+  if (elements.clearAll) elements.clearAll.addEventListener("click", clearAll);
+
+  if (elements.dateStart) {
+    elements.dateStart.addEventListener("change", applyDateRangeFilter);
+    elements.dateStart.addEventListener("input", applyDateRangeFilter);
+  }
+  if (elements.dateEnd) {
+    elements.dateEnd.addEventListener("change", applyDateRangeFilter);
+    elements.dateEnd.addEventListener("input", applyDateRangeFilter);
+  }
 
   // The page itself accepts files without needing a dedicated drop area.
-  document.addEventListener("dragover", event => {
-    if (event.dataTransfer?.types.includes("Files")) event.preventDefault();
-  });
-  document.addEventListener("drop", event => {
-    if (!event.dataTransfer?.files.length) return;
-    event.preventDefault();
-    importFiles(event.dataTransfer.files);
-  });
+  if (typeof document !== "undefined") {
+    document.addEventListener("dragover", event => {
+      if (event.dataTransfer?.types.includes("Files")) event.preventDefault();
+    });
+    document.addEventListener("drop", event => {
+      if (!event.dataTransfer?.files.length) return;
+      event.preventDefault();
+      importFiles(event.dataTransfer.files);
+    });
+  }
 
   function setTheme(theme) {
     const isDark = theme === "dark";
@@ -406,7 +532,24 @@
     }
   }
 
-  initTheme();
-  renderProfiles(); updateChart();
-  loadLocalProfiles();
+  if (typeof document !== "undefined") {
+    initTheme();
+    updateDateBounds();
+    updateDateRangeFromSelection();
+    renderProfiles(); updateChart();
+    loadLocalProfiles();
+  }
+
+  if (typeof module !== "undefined" && module.exports) {
+    module.exports = {
+      getTodayIso,
+      profileDate,
+      updateDateBounds,
+      updateDateRangeFromSelection,
+      applyDateRangeFilter,
+      clearAll,
+      profiles,
+      elements,
+    };
+  }
 })();
