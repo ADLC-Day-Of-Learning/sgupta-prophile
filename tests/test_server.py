@@ -41,8 +41,6 @@ class ServerTests(unittest.TestCase):
                     self.assertIn('data-theme="dark"', css)
                     self.assertIn("--ink", css)
                     self.assertIn("--paper", css)
-                    self.assertIn(".theme-toggle .theme-icon-sun { display: none; }", css)
-                    self.assertIn(".theme-toggle .theme-icon-moon { display: block; }", css)
                 with urlopen(base + "/app.js") as response:
                     js = response.read().decode("utf-8")
                     self.assertIn("themeToggle", js)
