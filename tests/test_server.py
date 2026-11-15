@@ -35,6 +35,7 @@ class ServerTests(unittest.TestCase):
                     self.assertIn(b'class="theme-toggle"', body)
                     self.assertIn(b'id="date-range-filter"', body)
                     self.assertIn(b'class="date-range-filter"', body)
+                    self.assertIn(b'role="group"', body)
                     self.assertIn(b'<input type="date" id="date-start" name="date-start" aria-label="From date">', body)
                     self.assertIn(b'<input type="date" id="date-end" name="date-end" aria-label="To date">', body)
                     self.assertIn(b'<label for="date-start">From</label>', body)

@@ -34,7 +34,7 @@ Open `http://127.0.0.1:8000` in a browser. Use `prophile --port 8080` for anothe
 ## Use
 
 1. On opening the page, profiles in the launch directory appear in the **Beans & batches** sidebar, grouped solely by filename (date prefix and trailing batch number/`glitch` suffix removed; Artisan metadata is ignored). **Nothing is selected initially**, so the grid and chart are empty.
-2. Tick a batch, tick a bean group, or use **Select all** to add profiles to both the grid and chart. Untick them or use **Select none** to remove them from the comparison without deleting them from the sidebar.
+2. Tick a batch, tick a bean group, or use **Select all** to add profiles to both the grid and chart. Untick them or use **Select none** to remove them from the comparison without deleting them from the sidebar. Use the **From** and **To** date range inputs (between the action buttons and batch checkboxes) to filter profiles by roast date: adjusting the date range selects all roasts falling within the specified bounds, while selection actions automatically synchronize the date range inputs.
 3. Use **Choose .alog files** or drop files anywhere on the page to add more profiles (these are selected on import). Use × in the grid to remove a batch from the comparison (it remains in the sidebar); use × in the sidebar to remove it entirely, or **Clear all** to remove everything from the current page. Reload to rediscover files in the launch directory.
 4. Hover over a selected grid row to emphasize its chart curves, or hover near a curve/event pin to highlight its corresponding grid row. Rows with notes show the roast and cupping notes on hover/focus.
 5. Use chart checkboxes to show or hide Bean temp, Exhaust temp, RoR, Heat, Air, or Event pins. Hover over the chart for values at an elapsed time.
@@ -54,6 +54,7 @@ Run `prophile` from `sample_profiles/`, then select the bean group to try the mu
 ## Features
 
 - Launch-directory `.alog` discovery, bean-grouped filters, multi-file selection and drag-and-drop
+- Date range selector controls with From and To date bounds and automatic selection synchronization
 - Coordinated, muted primary and secondary colors applied directly to profile names and their chart curves
 - Distinct line styles for BT, ET, RoR, heater, and air
 - Dynamic RoR scale from 0 to the maximum RoR across enabled profiles

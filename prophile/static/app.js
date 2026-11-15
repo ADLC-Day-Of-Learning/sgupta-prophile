@@ -6,7 +6,7 @@
   const duplicateKeys = new Set();
   let colorSequence = 0;
 
-  const elements = typeof document !== "undefined" ? {
+  const elements = {
     input: document.querySelector("#file-input"),
     status: document.querySelector("#status"),
     messages: document.querySelector("#messages"),
@@ -25,17 +25,15 @@
     dateEnd: document.querySelector("#date-end"),
     notesTooltip: document.querySelector("#notes-tooltip"),
     themeToggle: document.querySelector("#theme-toggle"),
-  } : {};
+  };
 
-  const chart = typeof document !== "undefined" && typeof window !== "undefined" && window.RoastOverlayChart ? new window.RoastOverlayChart(
+  const chart = new window.RoastOverlayChart(
     document.querySelector("#chart"),
     document.querySelector("#tooltip"),
     document.querySelector("#chart-empty"),
     document.querySelector("#chart-summary"),
-  ) : null;
-  if (chart) {
-    chart.onHoverProfile = id => highlightRow(id);
-  }
+  );
+  chart.onHoverProfile = id => highlightRow(id);
 
   function highlightRow(id) {
     for (const row of elements.rows.querySelectorAll("tr[data-profile-id]")) {
@@ -68,7 +66,7 @@
   }
 
   function updateChart() {
-    if (chart) chart.setData(profiles, visibility());
+    chart.setData(profiles, visibility());
     renderFilters();
     renderLegend();
   }
@@ -116,10 +114,8 @@
       elements.dateEnd.min = oldest;
       elements.dateEnd.max = maxDate;
     } else {
-      if (elements.dateStart.removeAttribute) elements.dateStart.removeAttribute("min");
-      else delete elements.dateStart.min;
-      if (elements.dateEnd.removeAttribute) elements.dateEnd.removeAttribute("min");
-      else delete elements.dateEnd.min;
+      elements.dateStart.removeAttribute("min");
+      elements.dateEnd.removeAttribute("min");
       elements.dateStart.max = today;
       elements.dateEnd.max = today;
     }
@@ -128,12 +124,6 @@
   function updateDateRangeFromSelection() {
     if (!elements.dateStart || !elements.dateEnd) return;
     const selected = profiles.filter(p => p.enabled);
-    if (!selected.length) {
-      const today = getTodayIso();
-      elements.dateStart.value = today;
-      elements.dateEnd.value = today;
-      return;
-    }
     const dates = selected
       .map(p => profileDate(p))
       .filter(Boolean)
@@ -141,6 +131,10 @@
     if (dates.length) {
       elements.dateStart.value = dates[0];
       elements.dateEnd.value = dates[dates.length - 1];
+    } else {
+      const today = getTodayIso();
+      elements.dateStart.value = today;
+      elements.dateEnd.value = today;
     }
   }
 
@@ -150,17 +144,16 @@
     const end = elements.dateEnd.value;
     if (start && !/^\d{4}-\d{2}-\d{2}$/.test(start)) return;
     if (end && !/^\d{4}-\d{2}-\d{2}$/.test(end)) return;
-    if (!start && !end) return;
 
     for (const profile of profiles) {
       const d = profileDate(profile);
-      if (!d) continue;
-      let inRange = true;
-      if (start && end && start > end) {
-        inRange = false;
-      } else {
-        if (start && d < start) inRange = false;
-        if (end && d > end) inRange = false;
+      let inRange = false;
+      if (d) {
+        if (start && end && start > end) {
+          inRange = false;
+        } else {
+          inRange = (!start || d >= start) && (!end || d <= end);
+        }
       }
       profile.enabled = inRange;
     }
@@ -168,7 +161,7 @@
     updateChart();
   }
 
-  function setStatus(message) { if (elements.status) elements.status.textContent = message; }
+  function setStatus(message) { elements.status.textContent = message; }
 
   function addMessage(message, type = "warning") {
     const item = document.createElement("div");
@@ -252,12 +245,11 @@
   }
 
   function hideNotesTooltip() {
-    if (elements.notesTooltip) elements.notesTooltip.hidden = true;
+    elements.notesTooltip.hidden = true;
   }
 
   function renderProfiles() {
     hideNotesTooltip();
-    if (!elements.gridEmpty || !elements.tableScroll || !elements.rows) return;
     const selected = profiles.filter(profile => profile.enabled);
     elements.gridEmpty.hidden = selected.length > 0;
     elements.tableScroll.hidden = selected.length === 0;
@@ -308,7 +300,6 @@
   }
 
   function renderFilters() {
-    if (!elements.groups || !elements.filterEmpty) return;
     elements.groups.replaceChildren();
     elements.filterEmpty.hidden = profiles.length > 0;
     const groups = new Map();
@@ -358,7 +349,6 @@
   }
 
   function renderLegend() {
-    if (!elements.legend) return;
     elements.legend.replaceChildren();
     for (const profile of profiles.filter(profile => profile.enabled)) {
       const key = document.createElement("span"); key.className = "profile-key";
@@ -381,7 +371,7 @@
 
   function clearAll() {
     profiles.splice(0); duplicateKeys.clear();
-    if (elements.messages) elements.messages.replaceChildren();
+    elements.messages.replaceChildren();
     updateDateBounds();
     updateDateRangeFromSelection();
     renderProfiles(); updateChart(); setStatus("");
@@ -460,8 +450,8 @@
     }
   }
 
-  if (elements.input) elements.input.addEventListener("change", () => importFiles(elements.input.files));
-  if (elements.controls) elements.controls.addEventListener("change", event => {
+  elements.input.addEventListener("change", () => importFiles(elements.input.files));
+  elements.controls.addEventListener("change", event => {
     const input = event.target;
     if (!(input instanceof HTMLInputElement)) return;
     const measurements = [...elements.controls.querySelectorAll("input[data-series]:not([data-series='events'])")];
@@ -472,30 +462,24 @@
     }
     updateChart();
   });
-  if (elements.selectAll) elements.selectAll.addEventListener("click", () => { profiles.forEach(profile => { profile.enabled = true; }); updateDateRangeFromSelection(); renderProfiles(); updateChart(); });
-  if (elements.selectNone) elements.selectNone.addEventListener("click", () => { profiles.forEach(profile => { profile.enabled = false; }); updateDateRangeFromSelection(); renderProfiles(); updateChart(); });
-  if (elements.clearAll) elements.clearAll.addEventListener("click", clearAll);
+  elements.selectAll.addEventListener("click", () => { profiles.forEach(profile => { profile.enabled = true; }); updateDateRangeFromSelection(); renderProfiles(); updateChart(); });
+  elements.selectNone.addEventListener("click", () => { profiles.forEach(profile => { profile.enabled = false; }); updateDateRangeFromSelection(); renderProfiles(); updateChart(); });
+  elements.clearAll.addEventListener("click", clearAll);
 
-  if (elements.dateStart) {
-    elements.dateStart.addEventListener("change", applyDateRangeFilter);
-    elements.dateStart.addEventListener("input", applyDateRangeFilter);
-  }
-  if (elements.dateEnd) {
-    elements.dateEnd.addEventListener("change", applyDateRangeFilter);
-    elements.dateEnd.addEventListener("input", applyDateRangeFilter);
-  }
+  elements.dateStart.addEventListener("change", applyDateRangeFilter);
+  elements.dateStart.addEventListener("input", applyDateRangeFilter);
+  elements.dateEnd.addEventListener("change", applyDateRangeFilter);
+  elements.dateEnd.addEventListener("input", applyDateRangeFilter);
 
   // The page itself accepts files without needing a dedicated drop area.
-  if (typeof document !== "undefined") {
-    document.addEventListener("dragover", event => {
-      if (event.dataTransfer?.types.includes("Files")) event.preventDefault();
-    });
-    document.addEventListener("drop", event => {
-      if (!event.dataTransfer?.files.length) return;
-      event.preventDefault();
-      importFiles(event.dataTransfer.files);
-    });
-  }
+  document.addEventListener("dragover", event => {
+    if (event.dataTransfer?.types.includes("Files")) event.preventDefault();
+  });
+  document.addEventListener("drop", event => {
+    if (!event.dataTransfer?.files.length) return;
+    event.preventDefault();
+    importFiles(event.dataTransfer.files);
+  });
 
   function setTheme(theme) {
     const isDark = theme === "dark";
@@ -532,16 +516,15 @@
     }
   }
 
-  if (typeof document !== "undefined") {
-    initTheme();
-    updateDateBounds();
-    updateDateRangeFromSelection();
-    renderProfiles(); updateChart();
-    loadLocalProfiles();
-  }
+  initTheme();
+  updateDateBounds();
+  updateDateRangeFromSelection();
+  renderProfiles();
+  updateChart();
+  loadLocalProfiles();
 
-  if (typeof module !== "undefined" && module.exports) {
-    module.exports = {
+  if (typeof window !== "undefined") {
+    window.prophileApp = {
       getTodayIso,
       profileDate,
       updateDateBounds,
