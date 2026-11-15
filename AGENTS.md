@@ -3,7 +3,8 @@
 ## Build and Test Commands
 
 - Run test suite: `python3 -m unittest discover -s tests`
-- Note that no external dependencies or build steps are required (Python standard library only).
+- Core test suite requires no external dependencies or build steps (Python standard library only).
+- Frontend JavaScript test suites execute via Node.js when available on PATH, and cleanly skip when Node.js is absent.
 
 ## Documentation Currency
 
@@ -21,3 +22,11 @@
 
 - Stylesheet cascade precedence, selector specificity dominance, and computed element display states are tested in `tests/test_styles.py` using standard-library helpers from `tests/css_utils.py`.
 - Do not add raw substring assertions on `styles.css` in `tests/test_server.py` to verify visual or display styles. Server integration checks in `test_server.py` should only verify HTTP static asset availability (status 200, Content-Type, and baseline CSS custom properties), delegating all selector specificity and cascade validation to `tests/test_styles.py`.
+
+## JavaScript and Client-Side Test Conventions
+
+- Client-side JavaScript unit tests are authored in Python under `tests/test_*.py` using standard-library `unittest` and `subprocess` to evaluate script logic in Node.js.
+- Every test class evaluating JavaScript via Node.js must be decorated with `@unittest.skipUnless(shutil.which('node'), 'Node.js is required to run JS unit tests')` so standard-library test discovery succeeds cleanly in pure Python environments.
+- Do not introduce CommonJS module exports (`module.exports`, `exports`) or runtime environment checks (`typeof module !== 'undefined'`) into browser client scripts under `prophile/static/`.
+- Client scripts should expose testable logic by attaching public hooks to the global `window` object (e.g. `window.prophileApp = { ... }`).
+- JavaScript test harnesses in Python should simulate the minimal browser environment (mocking `window`, `document`, and required DOM nodes) inside the Node evaluation script rather than forcing browser scripts to dual-target Node module systems.
