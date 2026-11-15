@@ -10,6 +10,7 @@
 - `design_doc.md` is living documentation.
 - Any change modifying profile table columns must update Section 3.2 ('Sidebar and selected-profile grid') column tables and example rows.
 - Any change modifying data formats or backend endpoints must update Section 5.2 ('Normalized API result') and/or Section 6.3 ('Local API').
+- Any change adding, modifying, or removing user-facing UI controls (filters, buttons, selectors, toggles) or interaction workflows must update README.md step-by-step instructions under '## Use' and the feature list under '## Features' in addition to design_doc.md Section 3.
 
 ## HTML Integration Test Conventions
 
