@@ -172,3 +172,35 @@ class StyleTests(unittest.TestCase):
         """Verifies attribute selector containing '#' is counted as an attribute, not an ID."""
         self.assertEqual(calculate_specificity('a[href="#top"]'), (0, 1, 1))
         self.assertEqual(calculate_specificity('[data-target="#modal"]'), (0, 1, 0))
+
+    def test_date_range_selector_styles(self):
+        css_path = Path(__file__).resolve().parents[1] / "prophile" / "static" / "styles.css"
+        css = css_path.read_text(encoding="utf-8")
+        rules = parse_css_rules(css)
+
+        # Build date range DOM elements
+        panel = Element("aside", classes=["filter-panel"])
+        date_filter = Element("div", element_id="date-range-filter", classes=["date-range-filter"], parent=panel)
+        input_group = Element("div", classes=["date-input-group"], parent=date_filter)
+        label = Element("label", parent=input_group)
+        date_input = Element("input", element_id="date-start", attributes={"type": "date"}, parent=input_group)
+
+        # Specificity calculations
+        self.assertEqual(calculate_specificity(".date-range-filter"), (0, 1, 0))
+        self.assertEqual(calculate_specificity(".date-input-group"), (0, 1, 0))
+        self.assertEqual(calculate_specificity('.date-input-group input[type="date"]'), (0, 2, 1))
+
+        # Computed styles
+        filter_display = get_computed_style(date_filter, "display", rules)
+        self.assertIsNotNone(filter_display)
+        self.assertEqual(filter_display["value"], "flex")
+
+        group_display = get_computed_style(input_group, "display", rules)
+        self.assertIsNotNone(group_display)
+        self.assertEqual(group_display["value"], "flex")
+
+        # Specificity conflict check
+        for elem in (date_filter, input_group, label, date_input):
+            conflicts = find_descending_specificity_conflicts(elem, "display", rules)
+            self.assertEqual(conflicts, [], f"Descending specificity conflict for {elem.classes}: {conflicts}")
+

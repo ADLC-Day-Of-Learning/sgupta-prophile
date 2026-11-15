@@ -50,6 +50,16 @@
         <button id="select-none" type="button" class="text-button">Select none</button>
         <button id="clear-all" type="button" class="text-button danger">Clear all</button>
       </div>
+      <div id="date-range-filter" class="date-range-filter" role="group" aria-label="Date range filter">
+        <div class="date-input-group">
+          <label for="date-start">From</label>
+          <input type="date" id="date-start" name="date-start" aria-label="From date">
+        </div>
+        <div class="date-input-group">
+          <label for="date-end">To</label>
+          <input type="date" id="date-end" name="date-end" aria-label="To date">
+        </div>
+      </div>
       <p id="filter-empty" class="filter-empty">No profiles found. Add .alog files to get started.</p>
       <div id="bean-groups" class="bean-groups"></div>
     </aside>

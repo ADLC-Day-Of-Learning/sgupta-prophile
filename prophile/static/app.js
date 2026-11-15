@@ -20,6 +20,9 @@
     selectAll: document.querySelector("#select-all"),
     selectNone: document.querySelector("#select-none"),
     clearAll: document.querySelector("#clear-all"),
+    dateRangeFilter: document.querySelector("#date-range-filter"),
+    dateStart: document.querySelector("#date-start"),
+    dateEnd: document.querySelector("#date-end"),
     notesTooltip: document.querySelector("#notes-tooltip"),
     themeToggle: document.querySelector("#theme-toggle"),
   };
@@ -66,6 +69,96 @@
     chart.setData(profiles, visibility());
     renderFilters();
     renderLegend();
+  }
+
+  function getTodayIso() {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, "0");
+    const day = String(now.getDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
+  }
+
+  function profileDate(profile) {
+    if (!profile) return null;
+    if (profile.roastisodate && /^\d{4}-\d{2}-\d{2}$/.test(profile.roastisodate)) {
+      return profile.roastisodate;
+    }
+    if (profile.roastDate && /^\d{4}-\d{2}-\d{2}$/.test(profile.roastDate)) {
+      return profile.roastDate;
+    }
+    if (profile.date && /^\d{4}-\d{2}-\d{2}$/.test(profile.date)) {
+      return profile.date;
+    }
+    const match = (profile.filename || "").match(/(?:^|[^0-9])(\d{2,4})-(\d{2})-(\d{2})(?:[^0-9]|$)/);
+    if (match) {
+      let year = Number.parseInt(match[1], 10);
+      if (year < 100) year += 2000;
+      const month = match[2];
+      const day = match[3];
+      return `${year}-${month}-${day}`;
+    }
+    return null;
+  }
+
+  function updateDateBounds() {
+    if (!elements.dateStart || !elements.dateEnd) return;
+    const today = getTodayIso();
+    const allDates = profiles.map(p => profileDate(p)).filter(Boolean).sort();
+    if (allDates.length) {
+      const oldest = allDates[0];
+      const newest = allDates[allDates.length - 1];
+      const maxDate = newest > today ? newest : today;
+      elements.dateStart.min = oldest;
+      elements.dateStart.max = maxDate;
+      elements.dateEnd.min = oldest;
+      elements.dateEnd.max = maxDate;
+    } else {
+      elements.dateStart.removeAttribute("min");
+      elements.dateEnd.removeAttribute("min");
+      elements.dateStart.max = today;
+      elements.dateEnd.max = today;
+    }
+  }
+
+  function updateDateRangeFromSelection() {
+    if (!elements.dateStart || !elements.dateEnd) return;
+    const selected = profiles.filter(p => p.enabled);
+    const dates = selected
+      .map(p => profileDate(p))
+      .filter(Boolean)
+      .sort();
+    if (dates.length) {
+      elements.dateStart.value = dates[0];
+      elements.dateEnd.value = dates[dates.length - 1];
+    } else {
+      const today = getTodayIso();
+      elements.dateStart.value = today;
+      elements.dateEnd.value = today;
+    }
+  }
+
+  function applyDateRangeFilter() {
+    if (!elements.dateStart || !elements.dateEnd) return;
+    const start = elements.dateStart.value;
+    const end = elements.dateEnd.value;
+    if (start && !/^\d{4}-\d{2}-\d{2}$/.test(start)) return;
+    if (end && !/^\d{4}-\d{2}-\d{2}$/.test(end)) return;
+
+    for (const profile of profiles) {
+      const d = profileDate(profile);
+      let inRange = false;
+      if (d) {
+        if (start && end && start > end) {
+          inRange = false;
+        } else {
+          inRange = (!start || d >= start) && (!end || d <= end);
+        }
+      }
+      profile.enabled = inRange;
+    }
+    renderProfiles();
+    updateChart();
   }
 
   function setStatus(message) { elements.status.textContent = message; }
@@ -195,7 +288,7 @@
       const actions = document.createElement("td");
       const remove = document.createElement("button"); remove.type = "button"; remove.className = "remove-button"; remove.textContent = "×";
       remove.title = `Remove ${profile.displayName} from comparison`; remove.setAttribute("aria-label", remove.title);
-      remove.addEventListener("click", () => { profile.enabled = false; renderProfiles(); updateChart(); }); actions.append(remove);
+      remove.addEventListener("click", () => { profile.enabled = false; updateDateRangeFromSelection(); renderProfiles(); updateChart(); }); actions.append(remove);
       row.append(name, greenWeight, finalWeight, chargeTemp, dropTemp, drying, browning, development, actions);
       elements.rows.append(row);
     }
@@ -225,6 +318,7 @@
       groupCheck.setAttribute("aria-label", `Select all batches of ${bean}`);
       groupCheck.addEventListener("change", () => {
         items.forEach(profile => { profile.enabled = groupCheck.checked; });
+        updateDateRangeFromSelection();
         renderProfiles(); updateChart();
       });
       const title = document.createElement("strong"); title.textContent = bean;
@@ -236,7 +330,9 @@
         const check = document.createElement("input"); check.type = "checkbox"; check.checked = profile.enabled;
         check.setAttribute("aria-label", `Show ${profile.displayName}`);
         check.addEventListener("change", () => {
-          profile.enabled = check.checked; renderProfiles(); updateChart();
+          profile.enabled = check.checked;
+          updateDateRangeFromSelection();
+          renderProfiles(); updateChart();
         });
         const name = document.createElement("span"); name.textContent = batchLabel(profile);
         name.title = profile.displayName;
@@ -267,12 +363,17 @@
     if (index < 0) return;
     duplicateKeys.delete(profiles[index].duplicateKey);
     profiles.splice(index, 1);
+    updateDateBounds();
+    updateDateRangeFromSelection();
     renderProfiles(); updateChart();
     setStatus(profiles.length ? `${profiles.length} profile${profiles.length === 1 ? "" : "s"} loaded.` : "");
   }
 
   function clearAll() {
-    profiles.splice(0); duplicateKeys.clear(); elements.messages.replaceChildren();
+    profiles.splice(0); duplicateKeys.clear();
+    elements.messages.replaceChildren();
+    updateDateBounds();
+    updateDateRangeFromSelection();
     renderProfiles(); updateChart(); setStatus("");
   }
 
@@ -318,6 +419,8 @@
         addMessage(`${file.name}: ${networkMessage}`, "error");
       }
     }
+    updateDateBounds();
+    updateDateRangeFromSelection();
     renderProfiles(); updateChart();
     setStatus(`${loaded} profile${loaded === 1 ? "" : "s"} loaded${accepted.length !== loaded ? `; ${accepted.length - loaded} failed` : ""}.`);
     elements.input.value = "";
@@ -338,6 +441,8 @@
         for (const warning of profile.warnings || []) addMessage(`${profile.filename}: ${warning}`);
       }
       for (const error of result.errors) addMessage(error, "error");
+      updateDateBounds();
+      updateDateRangeFromSelection();
       renderProfiles(); updateChart();
       setStatus(`${profiles.length} profile${profiles.length === 1 ? "" : "s"} found in ${result.directory}. Select batches to compare.`);
     } catch (error) {
@@ -357,9 +462,14 @@
     }
     updateChart();
   });
-  elements.selectAll.addEventListener("click", () => { profiles.forEach(profile => { profile.enabled = true; }); renderProfiles(); updateChart(); });
-  elements.selectNone.addEventListener("click", () => { profiles.forEach(profile => { profile.enabled = false; }); renderProfiles(); updateChart(); });
+  elements.selectAll.addEventListener("click", () => { profiles.forEach(profile => { profile.enabled = true; }); updateDateRangeFromSelection(); renderProfiles(); updateChart(); });
+  elements.selectNone.addEventListener("click", () => { profiles.forEach(profile => { profile.enabled = false; }); updateDateRangeFromSelection(); renderProfiles(); updateChart(); });
   elements.clearAll.addEventListener("click", clearAll);
+
+  elements.dateStart.addEventListener("change", applyDateRangeFilter);
+  elements.dateStart.addEventListener("input", applyDateRangeFilter);
+  elements.dateEnd.addEventListener("change", applyDateRangeFilter);
+  elements.dateEnd.addEventListener("input", applyDateRangeFilter);
 
   // The page itself accepts files without needing a dedicated drop area.
   document.addEventListener("dragover", event => {
@@ -407,6 +517,22 @@
   }
 
   initTheme();
-  renderProfiles(); updateChart();
+  updateDateBounds();
+  updateDateRangeFromSelection();
+  renderProfiles();
+  updateChart();
   loadLocalProfiles();
+
+  if (typeof window !== "undefined") {
+    window.prophileApp = {
+      getTodayIso,
+      profileDate,
+      updateDateBounds,
+      updateDateRangeFromSelection,
+      applyDateRangeFilter,
+      clearAll,
+      profiles,
+      elements,
+    };
+  }
 })();
